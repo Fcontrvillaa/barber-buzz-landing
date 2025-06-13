@@ -16,11 +16,15 @@ export interface Booking {
 
 interface BookingContextType {
   bookings: Booking[];
+  availableHours: string[];
   addBooking: (booking: Omit<Booking, 'id'>) => void;
   updateBooking: (id: string, updates: Partial<Booking>) => void;
   deleteBooking: (id: string) => void;
   getAvailableTimeSlots: (date: Date) => string[];
   getBookingsForDate: (date: Date) => Booking[];
+  updateAvailableHours: (hours: string[]) => void;
+  addAvailableHour: (hour: string) => void;
+  removeAvailableHour: (hour: string) => void;
 }
 
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
@@ -50,7 +54,7 @@ export const BookingProvider = ({ children }: BookingProviderProps) => {
     {
       id: "2",
       date: new Date(),
-      time: "11:30",
+      time: "11:00",
       service: "fade-moderno",
       customer: { name: "Carlos López", phone: "+34 987 654 321" },
       status: "confirmed"
@@ -65,11 +69,10 @@ export const BookingProvider = ({ children }: BookingProviderProps) => {
     }
   ]);
 
-  const allTimeSlots = [
-    "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-    "12:00", "12:30", "14:00", "14:30", "15:00", "15:30",
-    "16:00", "16:30", "17:00", "17:30", "18:00", "18:30"
-  ];
+  const [availableHours, setAvailableHours] = useState<string[]>([
+    "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", 
+    "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"
+  ]);
 
   const addBooking = (newBooking: Omit<Booking, 'id'>) => {
     const booking: Booking = {
@@ -98,7 +101,7 @@ export const BookingProvider = ({ children }: BookingProviderProps) => {
       )
       .map(booking => booking.time);
     
-    return allTimeSlots.filter(slot => !bookedSlots.includes(slot));
+    return availableHours.filter(slot => !bookedSlots.includes(slot));
   };
 
   const getBookingsForDate = (date: Date): Booking[] => {
@@ -108,14 +111,33 @@ export const BookingProvider = ({ children }: BookingProviderProps) => {
     ).sort((a, b) => a.time.localeCompare(b.time));
   };
 
+  const updateAvailableHours = (hours: string[]) => {
+    setAvailableHours(hours);
+  };
+
+  const addAvailableHour = (hour: string) => {
+    if (!availableHours.includes(hour)) {
+      const newHours = [...availableHours, hour].sort();
+      setAvailableHours(newHours);
+    }
+  };
+
+  const removeAvailableHour = (hour: string) => {
+    setAvailableHours(prev => prev.filter(h => h !== hour));
+  };
+
   return (
     <BookingContext.Provider value={{
       bookings,
+      availableHours,
       addBooking,
       updateBooking,
       deleteBooking,
       getAvailableTimeSlots,
-      getBookingsForDate
+      getBookingsForDate,
+      updateAvailableHours,
+      addAvailableHour,
+      removeAvailableHour
     }}>
       {children}
     </BookingContext.Provider>

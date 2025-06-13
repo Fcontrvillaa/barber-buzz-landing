@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { useBooking } from '@/contexts/BookingContext';
 import CalendarView from '@/components/CalendarView';
 import AdminLogin from './admin/AdminLogin';
 import BookingsList from './admin/BookingsList';
+import HoursManager from './admin/HoursManager';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -128,11 +128,12 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
         </DialogHeader>
 
         <Tabs defaultValue="calendar" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="calendar">Vista Gráfica</TabsTrigger>
             <TabsTrigger value="today">Hoy</TabsTrigger>
             <TabsTrigger value="week">Esta Semana</TabsTrigger>
             <TabsTrigger value="all">Todas las Citas</TabsTrigger>
+            <TabsTrigger value="hours">Gestión de Horarios</TabsTrigger>
           </TabsList>
 
           <TabsContent value="calendar">
@@ -204,6 +205,10 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
               onAction={handleBookingAction}
               showDate={true}
             />
+          </TabsContent>
+
+          <TabsContent value="hours">
+            <HoursManager />
           </TabsContent>
         </Tabs>
 
