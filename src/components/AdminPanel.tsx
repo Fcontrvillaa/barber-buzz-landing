@@ -1,16 +1,13 @@
+
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, addDays, subDays, addWeeks, subWeeks, addMonths, subMonths } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { addDays, subDays, addWeeks, subWeeks, addMonths, subMonths } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { useBooking } from '@/contexts/BookingContext';
-import CalendarView from '@/components/CalendarView';
 import AdminLogin from './admin/AdminLogin';
-import BookingsList from './admin/BookingsList';
-import HoursManager from './admin/HoursManager';
+import AdminPanelHeader from './admin/AdminPanelHeader';
+import AdminPanelTabs from './admin/AdminPanelTabs';
+import AdminPanelFooter from './admin/AdminPanelFooter';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -84,6 +81,10 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
     }
   };
 
+  const handleToday = () => {
+    setSelectedDate(new Date());
+  };
+
   const getTodayBookings = () => {
     const today = new Date();
     return bookings.filter(booking => 
@@ -106,6 +107,10 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
     });
   };
 
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+  };
+
   if (!isAuthenticated) {
     return (
       <AdminLogin
@@ -121,105 +126,21 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold gold-gradient">
-            Panel de Administración - José El Barbero
-          </DialogTitle>
-        </DialogHeader>
+        <AdminPanelHeader />
 
-        <Tabs defaultValue="calendar" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="calendar">Vista Gráfica</TabsTrigger>
-            <TabsTrigger value="today">Hoy</TabsTrigger>
-            <TabsTrigger value="week">Esta Semana</TabsTrigger>
-            <TabsTrigger value="all">Todas las Citas</TabsTrigger>
-            <TabsTrigger value="hours">Gestión de Horarios</TabsTrigger>
-          </TabsList>
+        <AdminPanelTabs
+          calendarView={calendarView}
+          selectedDate={selectedDate}
+          onNavigate={navigateDate}
+          onToday={handleToday}
+          onViewChange={setCalendarView}
+          todayBookings={getTodayBookings()}
+          weekBookings={getWeekBookings()}
+          allBookings={bookings}
+          onBookingAction={handleBookingAction}
+        />
 
-          <TabsContent value="calendar">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center space-x-2">
-                  <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setSelectedDate(new Date())}>
-                    Hoy
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => navigateDate('next')}>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                <div className="flex space-x-2">
-                  <Button
-                    variant={calendarView === 'day' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setCalendarView('day')}
-                  >
-                    Día
-                  </Button>
-                  <Button
-                    variant={calendarView === 'week' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setCalendarView('week')}
-                  >
-                    Semana
-                  </Button>
-                  <Button
-                    variant={calendarView === 'month' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setCalendarView('month')}
-                  >
-                    Mes
-                  </Button>
-                </div>
-              </div>
-              
-              <CalendarView view={calendarView} selectedDate={selectedDate} />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="today">
-            <BookingsList
-              bookings={getTodayBookings()}
-              title="Citas de Hoy"
-              subtitle={format(new Date(), 'dd/MM/yyyy', { locale: es })}
-              onAction={handleBookingAction}
-            />
-          </TabsContent>
-
-          <TabsContent value="week">
-            <BookingsList
-              bookings={getWeekBookings()}
-              title="Citas de Esta Semana"
-              onAction={handleBookingAction}
-              showDate={true}
-            />
-          </TabsContent>
-
-          <TabsContent value="all">
-            <BookingsList
-              bookings={bookings}
-              title="Todas las Citas"
-              onAction={handleBookingAction}
-              showDate={true}
-            />
-          </TabsContent>
-
-          <TabsContent value="hours">
-            <HoursManager />
-          </TabsContent>
-        </Tabs>
-
-        <div className="flex justify-between items-center mt-6 pt-4 border-t">
-          <Button variant="outline" onClick={() => setIsAuthenticated(false)}>
-            Cerrar Sesión
-          </Button>
-          <Button variant="outline" onClick={onClose}>
-            Cerrar Panel
-          </Button>
-        </div>
+        <AdminPanelFooter onLogout={handleLogout} onClose={onClose} />
       </DialogContent>
     </Dialog>
   );
