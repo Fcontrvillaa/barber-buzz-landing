@@ -12,6 +12,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { useBooking } from '@/contexts/BookingContext';
 
 interface BookingSystemProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ interface BookingSystemProps {
 }
 
 const BookingSystem = ({ isOpen, onClose }: BookingSystemProps) => {
+  const { addBooking, getAvailableTimeSlots } = useBooking();
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [selectedService, setSelectedService] = useState<string>("");
@@ -35,11 +37,7 @@ const BookingSystem = ({ isOpen, onClose }: BookingSystemProps) => {
     { id: "tratamiento-capilar", name: "Tratamiento Capilar", duration: 45, price: 35 }
   ];
 
-  const timeSlots = [
-    "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-    "12:00", "12:30", "14:00", "14:30", "15:00", "15:30",
-    "16:00", "16:30", "17:00", "17:30", "18:00", "18:30"
-  ];
+  const availableTimeSlots = selectedDate ? getAvailableTimeSlots(selectedDate) : [];
 
   const handleBooking = () => {
     if (!selectedDate || !selectedTime || !selectedService || !customerName || !customerPhone) {
@@ -51,9 +49,7 @@ const BookingSystem = ({ isOpen, onClose }: BookingSystemProps) => {
       return;
     }
 
-    // Simulate booking creation
     const booking = {
-      id: Date.now().toString(),
       date: selectedDate,
       time: selectedTime,
       service: selectedService,
@@ -61,10 +57,11 @@ const BookingSystem = ({ isOpen, onClose }: BookingSystemProps) => {
         name: customerName,
         phone: customerPhone,
         email: customerEmail
-      }
+      },
+      status: 'confirmed' as const
     };
 
-    console.log("Nueva reserva creada:", booking);
+    addBooking(booking);
 
     toast({
       title: "¡Reserva confirmada!",
@@ -79,6 +76,11 @@ const BookingSystem = ({ isOpen, onClose }: BookingSystemProps) => {
     setCustomerPhone("");
     setCustomerEmail("");
     onClose();
+  };
+
+  const handleDateChange = (date: Date | undefined) => {
+    setSelectedDate(date);
+    setSelectedTime(""); // Reset time when date changes
   };
 
   return (
@@ -139,7 +141,7 @@ const BookingSystem = ({ isOpen, onClose }: BookingSystemProps) => {
                   <Calendar
                     mode="single"
                     selected={selectedDate}
-                    onSelect={setSelectedDate}
+                    onSelect={handleDateChange}
                     disabled={(date) => date < new Date() || date.getDay() === 0}
                     initialFocus
                     className="pointer-events-auto"
@@ -157,16 +159,27 @@ const BookingSystem = ({ isOpen, onClose }: BookingSystemProps) => {
                   <SelectValue placeholder="Elige una hora" />
                 </SelectTrigger>
                 <SelectContent>
-                  {timeSlots.map((time) => (
-                    <SelectItem key={time} value={time}>
-                      <div className="flex items-center">
-                        <Clock className="mr-2 h-4 w-4" />
-                        {time}
-                      </div>
+                  {availableTimeSlots.length > 0 ? (
+                    availableTimeSlots.map((time) => (
+                      <SelectItem key={time} value={time}>
+                        <div className="flex items-center">
+                          <Clock className="mr-2 h-4 w-4" />
+                          {time}
+                        </div>
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-slots" disabled>
+                      No hay horarios disponibles
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
+              {selectedDate && availableTimeSlots.length === 0 && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  No hay horarios disponibles para esta fecha.
+                </p>
+              )}
             </div>
           </div>
 

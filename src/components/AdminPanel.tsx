@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,61 +5,24 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Clock, User, Phone, Edit, Trash2, Check, X } from 'lucide-react';
-import { format } from 'date-fns';
+import { Calendar, Clock, User, Phone, Edit, Trash2, Check, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { format, addDays, subDays, addWeeks, subWeeks, addMonths, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from '@/hooks/use-toast';
+import { useBooking } from '@/contexts/BookingContext';
+import CalendarView from '@/components/CalendarView';
 
 interface AdminPanelProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-interface Booking {
-  id: string;
-  date: Date;
-  time: string;
-  service: string;
-  customer: {
-    name: string;
-    phone: string;
-    email?: string;
-  };
-  status: 'confirmed' | 'completed' | 'cancelled';
-}
-
 const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
+  const { bookings, updateBooking, deleteBooking } = useBooking();
   const [adminPassword, setAdminPassword] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [calendarView, setCalendarView] = useState<'day' | 'week' | 'month'>('day');
   const [selectedDate, setSelectedDate] = useState(new Date());
-
-  // Mock bookings data
-  const [bookings, setBookings] = useState<Booking[]>([
-    {
-      id: "1",
-      date: new Date(),
-      time: "10:00",
-      service: "Corte + Barba",
-      customer: { name: "Miguel Rodríguez", phone: "+34 123 456 789", email: "miguel@email.com" },
-      status: "confirmed"
-    },
-    {
-      id: "2",
-      date: new Date(),
-      time: "11:30",
-      service: "Fade Moderno",
-      customer: { name: "Carlos López", phone: "+34 987 654 321" },
-      status: "confirmed"
-    },
-    {
-      id: "3",
-      date: new Date(),
-      time: "15:00",
-      service: "Afeitado Clásico",
-      customer: { name: "David García", phone: "+34 555 123 456", email: "david@email.com" },
-      status: "confirmed"
-    }
-  ]);
 
   const handleLogin = () => {
     if (adminPassword === "admin123") {
@@ -79,22 +41,47 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
   };
 
   const handleBookingAction = (bookingId: string, action: 'complete' | 'cancel' | 'delete') => {
-    setBookings(prev => {
-      if (action === 'delete') {
-        return prev.filter(booking => booking.id !== bookingId);
-      }
-      return prev.map(booking => 
-        booking.id === bookingId 
-          ? { ...booking, status: action === 'complete' ? 'completed' : 'cancelled' }
-          : booking
-      );
-    });
+    if (action === 'delete') {
+      deleteBooking(bookingId);
+    } else {
+      updateBooking(bookingId, { 
+        status: action === 'complete' ? 'completed' : 'cancelled' 
+      });
+    }
 
     const actionText = action === 'complete' ? 'completada' : action === 'cancel' ? 'cancelada' : 'eliminada';
     toast({
       title: "Cita actualizada",
       description: `La cita ha sido ${actionText}.`,
     });
+  };
+
+  const navigateDate = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      switch (calendarView) {
+        case 'day':
+          setSelectedDate(subDays(selectedDate, 1));
+          break;
+        case 'week':
+          setSelectedDate(subWeeks(selectedDate, 1));
+          break;
+        case 'month':
+          setSelectedDate(subMonths(selectedDate, 1));
+          break;
+      }
+    } else {
+      switch (calendarView) {
+        case 'day':
+          setSelectedDate(addDays(selectedDate, 1));
+          break;
+        case 'week':
+          setSelectedDate(addWeeks(selectedDate, 1));
+          break;
+        case 'month':
+          setSelectedDate(addMonths(selectedDate, 1));
+          break;
+      }
+    }
   };
 
   const getTodayBookings = () => {
@@ -178,20 +165,66 @@ const AdminPanel = ({ isOpen, onClose }: AdminPanelProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold gold-gradient">
             Panel de Administración - José El Barbero
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="today" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs defaultValue="calendar" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="calendar">Vista Gráfica</TabsTrigger>
             <TabsTrigger value="today">Hoy</TabsTrigger>
             <TabsTrigger value="week">Esta Semana</TabsTrigger>
             <TabsTrigger value="all">Todas las Citas</TabsTrigger>
           </TabsList>
 
+          <TabsContent value="calendar">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center space-x-2">
+                  <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setSelectedDate(new Date())}>
+                    Hoy
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => navigateDate('next')}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                <div className="flex space-x-2">
+                  <Button
+                    variant={calendarView === 'day' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCalendarView('day')}
+                  >
+                    Día
+                  </Button>
+                  <Button
+                    variant={calendarView === 'week' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCalendarView('week')}
+                  >
+                    Semana
+                  </Button>
+                  <Button
+                    variant={calendarView === 'month' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCalendarView('month')}
+                  >
+                    Mes
+                  </Button>
+                </div>
+              </div>
+              
+              <CalendarView view={calendarView} selectedDate={selectedDate} />
+            </div>
+          </TabsContent>
+
+          
           <TabsContent value="today">
             <div className="space-y-4">
               <div className="flex justify-between items-center">

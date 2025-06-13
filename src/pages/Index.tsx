@@ -8,34 +8,37 @@ import Contact from '@/components/Contact';
 import Footer from '@/components/Footer';
 import BookingSystem from '@/components/BookingSystem';
 import AdminPanel from '@/components/AdminPanel';
+import { BookingProvider } from '@/contexts/BookingContext';
 
 const Index = () => {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Header 
-        onBookingClick={() => setIsBookingOpen(true)}
-        onAdminClick={() => setIsAdminOpen(true)}
-      />
-      
-      <Hero onBookingClick={() => setIsBookingOpen(true)} />
-      <Services />
-      <Gallery />
-      <Contact />
-      <Footer />
+    <BookingProvider>
+      <div className="min-h-screen bg-background text-foreground">
+        <Header 
+          onBookingClick={() => setIsBookingOpen(true)}
+          onAdminClick={() => setIsAdminOpen(true)}
+        />
+        
+        <Hero onBookingClick={() => setIsBookingOpen(true)} />
+        <Services />
+        <Gallery />
+        <Contact />
+        <Footer />
 
-      <BookingSystem 
-        isOpen={isBookingOpen} 
-        onClose={() => setIsBookingOpen(false)} 
-      />
-      
-      <AdminPanel 
-        isOpen={isAdminOpen} 
-        onClose={() => setIsAdminOpen(false)} 
-      />
-    </div>
+        <BookingSystem 
+          isOpen={isBookingOpen} 
+          onClose={() => setIsBookingOpen(false)} 
+        />
+        
+        <AdminPanel 
+          isOpen={isAdminOpen} 
+          onClose={() => setIsAdminOpen(false)} 
+        />
+      </div>
+    </BookingProvider>
   );
 };
 
